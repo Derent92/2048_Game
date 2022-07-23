@@ -40,3 +40,16 @@ jobs:
           distribution: 'adopt'
       - name: Build with Maven
         run: mvn package
+
+    deploy:
+      runs-on: self-hosted
+      steps:
+        - uses: actions/checkout@v3
+        -name: Docker rm
+        run: docker rm --force tomcat
+        -name: Docker image
+        run: docker image rm --force game2048
+        -name: Echo
+        run: echo -e 'FROM tomcat:9-jdk17-openjdk-slim \n COPY ./target/game2048.war /usr/local/tomcat/webapps' | docker build -t game2048 -f- .
+        -name: Docker Run
+        run: docker run --rm -d --name tomcat -p 8080:8080 game2048
