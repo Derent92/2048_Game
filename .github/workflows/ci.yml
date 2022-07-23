@@ -45,15 +45,37 @@ jobs:
   deploy:
     name: Deploy my app
 
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v1
-      - name: Docker rm
-      run: docker rm --force tomcat
-      - name: Docker image
-      run: docker image rm --force game2048
-      - name: Echo
-      run: echo -e 'FROM tomcat:9-jdk17-openjdk-slim \n COPY ./target/game2048.war /usr/local/tomcat/webapps' | docker build -t game2048 -f- .
-      - name: Docker Run
-      run: docker run --rm -d --name tomcat -p 8080:8080 game2048
+
+      - uses: chrnorm/deployment-action@v2
+        name: Create GitHub deployment
+        id: deployment
+        with:
+          token: '${{ github.token }}'
+          environment-url: http://my-app-url.com
+          environment: production
+
+      - name: Deploy my app
+        run: |
+          # add your deployment code here
+
+      - name: Update deployment status (success)
+        if: success()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: '${{ github.token }}'
+          environment-url: ${{ steps.deployment.outputs.environment_url }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          state: 'success'
+
+      - name: Update deployment status (failure)
+        if: failure()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: '${{ github.token }}'
+          environment-url: ${{ steps.deployment.outputs.environment_url }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          state: 'failure'
